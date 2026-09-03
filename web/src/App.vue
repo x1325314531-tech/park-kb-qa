@@ -9,6 +9,8 @@ interface DisplayMessage {
   sources: SourceItem[]
   total: number
   error?: boolean
+  interrupted?: boolean
+  retryHistory?: ChatMessage[]
 }
 
 const messages = ref<DisplayMessage[]>([])
@@ -16,6 +18,11 @@ const input = ref('')
 const streaming = ref(false)
 const listEl = ref<HTMLElement | null>(null)
 let abortCtrl: AbortController | null = null
+
+// ---- 原文查看弹窗 ----
+const sourceModal = ref(false)
+const sourceTitle = ref('')
+const sourceHtml = ref('')
 
 const suggestions = [
   '中央空调高压报警怎么处理？',
@@ -25,6 +32,14 @@ const suggestions = [
   '配电房停电了怎么办？',
 ]
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 function scrollToBottom() {
   void nextTick(() => {
     const el = listEl.value
@@ -32,17 +47,40 @@ function scrollToBottom() {
   })
 }
 
-async function send(text?: string) {
-  const content = (text ?? input.value).trim()
-  if (!content || streaming.value) return
+async function openSource(file: string, chunkText: string) {
+  try {
+    const resp = await fetch(`/api/source?file=${encodeURIComponent(file)}`)
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+    const raw = await resp.text()
+    const escaped = escapeHtml(raw)
+    // 高亮：在原文中定位片段文本（按首个出现位置）
+    const target = escapeHtml(chunkText.trim())
+    let html = escaped
+    const idx = escaped.indexOf(target)
+    if (idx >= 0) {
+      html = escaped.slice(0, idx) + '<mark class="hl">' + target + '</mark>' + escaped.slice(idx + target.length)
+    }
+    sourceTitle.value = file
+    sourceHtml.value = html
+    sourceModal.value = true
+    void nextTick(() => {
+      document.querySelector('.source-body mark.hl')?.scrollIntoView({ block: 'center' })
+    })
+  } catch (e) {
+    alert('原文加载失败：' + ((e as Error).message || '未知错误'))
+  }
+}
 
-  messages.value.push({ role: 'user', content, sources: [], total: 0 })
-  const botIndex = messages.value.push({ role: 'assistant', content: '', sources: [], total: 0 }) - 1
-  input.value = ''
+function closeSource() {
+  sourceModal.value = false
+}
+
+async function runChat(history: ChatMessage[], botMsg: DisplayMessage) {
+  botMsg.error = false
+  botMsg.interrupted = false
+  botMsg.content = ''
   streaming.value = true
-  scrollToBottom()
-
-  const history: ChatMessage[] = messages.value.map((m) => ({ role: m.role, content: m.content }))
+  let doneReceived = false
 
   abortCtrl = new AbortController()
   const signal = abortCtrl.signal
@@ -52,21 +90,21 @@ async function send(text?: string) {
       history,
       {
         onDelta: (t) => {
-          messages.value[botIndex].content += t
+          botMsg.content += t
           scrollToBottom()
         },
         onSources: (sources, total) => {
-          messages.value[botIndex].sources = sources
-          messages.value[botIndex].total = total
+          botMsg.sources = sources
+          botMsg.total = total
         },
         onError: (msg) => {
-          messages.value[botIndex].content = `⚠️ ${msg}`
-          messages.value[botIndex].error = true
+          botMsg.content = `⚠️ ${msg}`
+          botMsg.error = true
+          doneReceived = true
         },
         onDone: () => {
-          if (!messages.value[botIndex].content) {
-            messages.value[botIndex].content = '（没有生成回答内容）'
-          }
+          doneReceived = true
+          if (!botMsg.content) botMsg.content = '（没有生成回答内容）'
         },
       },
       5,
@@ -74,14 +112,38 @@ async function send(text?: string) {
     )
   } catch (e) {
     if ((e as Error).name !== 'AbortError') {
-      messages.value[botIndex].content = `⚠️ ${(e as Error).message || '请求失败'}`
-      messages.value[botIndex].error = true
+      botMsg.content = `⚠️ ${(e as Error).message || '请求失败'}`
+      botMsg.error = true
     }
   } finally {
     streaming.value = false
     abortCtrl = null
+    // 流意外结束且未收到 done → 判定连接中断，提供重试
+    if (!doneReceived && !botMsg.error) {
+      botMsg.interrupted = true
+      botMsg.retryHistory = history
+    }
     scrollToBottom()
   }
+}
+
+async function send(text?: string) {
+  const content = (text ?? input.value).trim()
+  if (!content || streaming.value) return
+
+  messages.value.push({ role: 'user', content, sources: [], total: 0 })
+  const botMsg: DisplayMessage = { role: 'assistant', content: '', sources: [], total: 0 }
+  messages.value.push(botMsg)
+  input.value = ''
+  scrollToBottom()
+
+  const history: ChatMessage[] = messages.value.map((m) => ({ role: m.role, content: m.content }))
+  await runChat(history, botMsg)
+}
+
+function retry(botMsg: DisplayMessage) {
+  if (!botMsg.retryHistory || streaming.value) return
+  void runChat(botMsg.retryHistory, botMsg)
 }
 
 function stop() {
@@ -112,17 +174,24 @@ function onKeydown(e: KeyboardEvent) {
       </div>
 
       <div v-for="(m, i) in messages" :key="i" class="msg" :class="m.role">
-        <div class="bubble" :class="{ 'error-bubble': m.error }">{{ m.content }}
+        <div class="bubble" :class="{ 'error-bubble': m.error }">
+          {{ m.content }}
           <span v-if="streaming && i === messages.length - 1 && !m.content" class="typing">
             <span></span><span></span><span></span>
           </span>
         </div>
 
+        <button v-if="m.interrupted" class="retry-btn" @click="retry(m)">⚠️ 连接中断 · 点击重试</button>
+
         <details v-if="m.role === 'assistant' && m.sources.length" class="sources">
           <summary>参考来源（{{ m.sources.length }} 条 / 知识库共 {{ m.total }} 条）</summary>
           <div class="list">
             <div v-for="(s, j) in m.sources" :key="j" class="source-card">
-              <div class="src">📄 {{ s.source }}<span class="score">相似度 {{ s.score }}</span></div>
+              <div class="src">
+                📄 {{ s.source }}
+                <span class="score">相似度 {{ s.score }}</span>
+                <button class="view-src" @click="openSource(s.source, s.text)">查看原文</button>
+              </div>
               <div>{{ s.text }}</div>
             </div>
           </div>
@@ -140,5 +209,16 @@ function onKeydown(e: KeyboardEvent) {
       <button v-if="streaming" @click="stop">停止</button>
       <button v-else :disabled="!input.trim()" @click="send()">发送</button>
     </footer>
+
+    <!-- 原文查看弹窗 -->
+    <div v-if="sourceModal" class="modal-mask" @click.self="closeSource">
+      <div class="modal">
+        <div class="modal-head">
+          <span class="modal-title">📄 {{ sourceTitle }}</span>
+          <button class="modal-close" @click="closeSource">✕</button>
+        </div>
+        <div class="source-body" v-html="sourceHtml"></div>
+      </div>
+    </div>
   </div>
 </template>
