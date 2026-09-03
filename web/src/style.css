@@ -1,20 +1,20 @@
 :root {
-  color-scheme: dark;
-  --bg: #05070f;
-  --card: rgba(255, 255, 255, 0.045);
-  --card-solid: #0d1226;
-  --text: #e6edf7;
-  --text-2: #8b96b0;
-  --border: rgba(148, 163, 184, 0.16);
-  --accent: #22d3ee;
-  --accent-2: #818cf8;
-  --grad: linear-gradient(135deg, #22d3ee 0%, #60a5fa 45%, #a78bfa 100%);
-  --user-bubble: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+  color-scheme: light;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --card-soft: #f7f9fd;
+  --text: #1a2333;
+  --text-2: #6b7280;
+  --border: #e3e8f2;
+  --accent: #3b82f6;
+  --accent-2: #8b5cf6;
+  --grad: linear-gradient(135deg, #3b82f6 0%, #6366f1 55%, #8b5cf6 100%);
+  --user-bubble: linear-gradient(135deg, #2563eb 0%, #6d28d9 100%);
   --user-text: #ffffff;
-  --bot-bubble: rgba(255, 255, 255, 0.05);
-  --danger: #fb7185;
+  --bot-bubble: #ffffff;
+  --danger: #e11d48;
   --radius: 16px;
-  --glow: 0 0 28px rgba(34, 211, 238, 0.18);
+  --shadow: 0 6px 24px rgba(31, 45, 88, 0.07);
 }
 
 * {
@@ -37,17 +37,16 @@ body {
   overflow: hidden;
 }
 
-/* ---- 科技感背景：极光 + 网格 ---- */
+/* ---- 浅色科技感背景：极淡渐变 + 细网格 ---- */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(60% 45% at 12% 8%, rgba(34, 211, 238, 0.13) 0%, transparent 60%),
-    radial-gradient(55% 45% at 88% 18%, rgba(129, 140, 248, 0.14) 0%, transparent 60%),
-    radial-gradient(70% 55% at 50% 105%, rgba(168, 85, 247, 0.1) 0%, transparent 65%),
-    linear-gradient(180deg, #05070f 0%, #080c1c 55%, #0a0e22 100%);
+    radial-gradient(55% 45% at 15% 5%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(50% 42% at 88% 15%, rgba(139, 92, 246, 0.07) 0%, transparent 60%),
+    linear-gradient(180deg, #f8faff 0%, #f2f5fb 100%);
 }
 
 body::after {
@@ -56,8 +55,8 @@ body::after {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(100, 116, 160, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 160, 0.045) 1px, transparent 1px);
   background-size: 42px 42px;
   mask-image: radial-gradient(75% 75% at 50% 30%, #000 30%, transparent 100%);
   pointer-events: none;
@@ -86,7 +85,7 @@ body::after {
   height: 10px;
   border-radius: 50%;
   background: var(--grad);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
   animation: pulse 2s infinite;
 }
 
@@ -94,11 +93,11 @@ body::after {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 4px rgba(34, 211, 238, 0.35);
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.2);
   }
 }
 
@@ -139,7 +138,7 @@ body::after {
   flex-direction: column;
   gap: 16px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  scrollbar-color: rgba(100, 116, 160, 0.3) transparent;
 }
 
 .empty-tip {
@@ -152,7 +151,7 @@ body::after {
 .empty-tip p:first-child {
   font-size: 14px;
   color: var(--text);
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .suggestion-chips {
@@ -171,17 +170,17 @@ body::after {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
-  backdrop-filter: blur(8px);
   font-size: 12.5px;
   color: var(--text);
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(31, 45, 88, 0.05);
   transition: all 0.18s;
 }
 
 .chip:hover {
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: var(--glow);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.18);
   transform: translateY(-1px);
 }
 
@@ -210,18 +209,17 @@ body::after {
   background: var(--user-bubble);
   color: var(--user-text);
   border-bottom-right-radius: 5px;
-  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.22);
 }
 
 .msg.bot .bubble {
   background: var(--bot-bubble);
   border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
   border-bottom-left-radius: 5px;
-  box-shadow: 0 4px 20px rgba(2, 8, 26, 0.35);
+  box-shadow: var(--shadow);
 }
 
-/* ---- AI 回答 Markdown 渲染样式 ---- */
+/* ---- AI 回答 Markdown 渲染样式（浅色版）---- */
 .markdown-body {
   font-size: 13.5px;
   line-height: 1.75;
@@ -241,7 +239,7 @@ body::after {
 }
 
 .markdown-body strong {
-  color: #7ee7ff;
+  color: #1d4ed8;
   font-weight: 700;
 }
 
@@ -256,7 +254,7 @@ body::after {
   margin: 12px 0 6px;
   line-height: 1.4;
   font-weight: 700;
-  color: #d9f3ff;
+  color: #172554;
 }
 
 .markdown-body h1 {
@@ -268,7 +266,7 @@ body::after {
 .markdown-body h2 {
   font-size: 14.5px;
   padding-left: 8px;
-  border-left: 3px solid rgba(34, 211, 238, 0.7);
+  border-left: 3px solid rgba(59, 130, 246, 0.65);
 }
 
 .markdown-body h3 {
@@ -292,11 +290,12 @@ body::after {
 
 .markdown-body li::marker {
   color: var(--accent);
+  font-weight: 600;
 }
 
 .markdown-body code {
-  background: rgba(34, 211, 238, 0.12);
-  color: #7ee7ff;
+  background: rgba(59, 130, 246, 0.09);
+  color: #1d4ed8;
   border-radius: 5px;
   padding: 1px 5px;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
@@ -304,7 +303,7 @@ body::after {
 }
 
 .markdown-body pre {
-  background: rgba(2, 6, 20, 0.65);
+  background: #f1f5fb;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -315,14 +314,14 @@ body::after {
 .markdown-body pre code {
   background: transparent;
   padding: 0;
-  color: #b8e6ff;
+  color: #1e3a8a;
 }
 
 .markdown-body blockquote {
   margin: 8px 0;
   padding: 6px 12px;
   border-left: 3px solid var(--accent);
-  background: rgba(34, 211, 238, 0.06);
+  background: rgba(59, 130, 246, 0.06);
   border-radius: 0 8px 8px 0;
   color: var(--text-2);
 }
@@ -392,12 +391,11 @@ body::after {
 }
 
 .source-card {
-  background: rgba(2, 6, 20, 0.55);
+  background: var(--card-soft);
   border: 1px solid var(--border);
   border-radius: 11px;
   padding: 9px 11px;
   font-size: 12px;
-  backdrop-filter: blur(6px);
 }
 
 .source-card .src {
@@ -418,8 +416,8 @@ body::after {
 }
 
 .view-src {
-  border: 1px solid rgba(34, 211, 238, 0.45);
-  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.06);
   color: var(--accent);
   font-size: 11px;
   border-radius: 7px;
@@ -434,13 +432,13 @@ body::after {
   background: var(--grad);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
 }
 
 .retry-btn {
   margin-top: 6px;
-  border: 1px solid rgba(251, 113, 133, 0.55);
-  background: rgba(251, 113, 133, 0.08);
+  border: 1px solid rgba(225, 29, 72, 0.5);
+  background: rgba(225, 29, 72, 0.05);
   color: var(--danger);
   font-size: 12px;
   border-radius: 8px;
@@ -457,8 +455,8 @@ body::after {
 .modal-mask {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 18, 0.72);
-  backdrop-filter: blur(6px);
+  background: rgba(30, 41, 66, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -467,7 +465,7 @@ body::after {
 }
 
 .modal {
-  background: linear-gradient(180deg, #0d1330 0%, #0a0e22 100%);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
   width: 100%;
@@ -476,7 +474,7 @@ body::after {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(34, 211, 238, 0.08);
+  box-shadow: 0 24px 60px rgba(31, 45, 88, 0.22);
 }
 
 .modal-head {
@@ -508,8 +506,8 @@ body::after {
 }
 
 .modal-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  background: var(--card-soft);
 }
 
 .source-body {
@@ -523,15 +521,15 @@ body::after {
 }
 
 .source-body mark.hl {
-  background: rgba(34, 211, 238, 0.22);
-  color: #d9f7ff;
+  background: rgba(59, 130, 246, 0.16);
+  color: #1e3a8a;
   border-radius: 4px;
   padding: 1px 3px;
-  outline: 1.5px solid rgba(34, 211, 238, 0.55);
+  outline: 1.5px solid rgba(59, 130, 246, 0.5);
 }
 
 .error-bubble {
-  border-color: rgba(251, 113, 133, 0.55) !important;
+  border-color: rgba(225, 29, 72, 0.5) !important;
   color: var(--danger);
 }
 
@@ -552,7 +550,6 @@ body::after {
   font: inherit;
   color: var(--text);
   background: var(--card);
-  backdrop-filter: blur(10px);
   min-height: 48px;
   max-height: 140px;
   outline: none;
@@ -560,8 +557,8 @@ body::after {
 }
 
 .composer textarea:focus {
-  border-color: rgba(34, 211, 238, 0.6);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12), var(--glow);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
 .composer button {
@@ -574,12 +571,12 @@ body::after {
   font-weight: 600;
   cursor: pointer;
   min-height: 48px;
-  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
   transition: all 0.18s;
 }
 
 .composer button:hover:not(:disabled) {
-  box-shadow: 0 4px 26px rgba(34, 211, 238, 0.5);
+  box-shadow: 0 4px 22px rgba(59, 130, 246, 0.45);
   transform: translateY(-1px);
 }
 
