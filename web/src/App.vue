@@ -25,11 +25,11 @@ const sourceTitle = ref('')
 const sourceHtml = ref('')
 
 const suggestions = [
-  '中央空调高压报警怎么处理？',
   '电梯困人了怎么处置？',
-  '消防主机误报怎么办？',
-  '监控录像要保存多久？',
-  '配电房停电了怎么办？',
+  '中央空调高压报警怎么处理？',
+  '光伏发电量下降怎么排查？',
+  '暴雨橙色预警要做什么准备？',
+  '门禁卡刷不开门怎么排查？',
 ]
 
 function escapeHtml(s: string): string {
@@ -163,8 +163,9 @@ function onKeydown(e: KeyboardEvent) {
 <template>
   <div class="chat-app">
     <header class="chat-header">
-      <h1>园区设备知识库问答</h1>
-      <div class="sub">RAG Demo · Vue3 + Node.js + SSE 流式 · 回答附引用来源</div>
+      <span class="brand-dot"></span>
+      <h1>园区设备智能问答</h1>
+      <div class="sub">RAG 智能检索 · SSE 流式输出 · 引用可溯源</div>
     </header>
 
     <main ref="listEl" class="messages">
