@@ -49,7 +49,9 @@ function scrollToBottom() {
 
 async function openSource(file: string, chunkText: string) {
   try {
-    const resp = await fetch(`/api/source?file=${encodeURIComponent(file)}`)
+    // 引用名形如 "xxx.md#片段3"，去掉片段后缀才是真实文件名
+    const fileName = file.split('#')[0]
+    const resp = await fetch(`/api/source?file=${encodeURIComponent(fileName)}`)
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     const raw = await resp.text()
     const escaped = escapeHtml(raw)

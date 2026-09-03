@@ -1,12 +1,16 @@
 /**
- * 知识入库脚本：
- *   node server/src/ingest.js            # 真实模式（需要 EMBEDDING_API_KEY）
- *   node server/src/ingest.js --force    # 清空并重新入库
+ * 知识入库脚本（支持增量）：
+ *   node server/src/ingest.js            # 增量：只重算新增/变化/删除的文档
+ *   node server/src/ingest.js --force    # 清空并全量重新入库
  *   MOCK_MODE=true node server/src/ingest.js   # 离线演示（哈希伪向量）
  *
  * 流程：读取 data/source/*.md|txt → 分段（500-800字，重叠100）→ 向量化 → 写入 vectors.json
+ *
+ * 增量逻辑：每个文档按内容 MD5 记录；入库时跳过内容未变化的文档（复用旧向量），
+ * 仅对新增/修改的文档重新向量化，删除的文档自动从向量库清理。
  */
 import { readdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { config } from './config.js';
 import { embedTexts } from './embed.js';
@@ -32,13 +36,19 @@ function splitIntoChunks(text, { min = 500, max = 800, overlap = 100 } = {}) {
   return chunks;
 }
 
+function fileHash(content) {
+  return createHash('md5').update(content).digest('hex');
+}
+
+/** 读取当前所有源文档：{ text, source, doc, hash } */
 function collectSources() {
   const files = readdirSync(config.paths.sourceDir).filter((f) => /\.(md|txt)$/i.test(f));
   const sources = [];
   for (const file of files) {
     const raw = readFileSync(path.join(config.paths.sourceDir, file), 'utf8');
     const chunks = splitIntoChunks(raw);
-    chunks.forEach((text, i) => sources.push({ text, source: `${file}#片段${i + 1}` }));
+    const hash = fileHash(raw);
+    chunks.forEach((text, i) => sources.push({ text, source: `${file}#片段${i + 1}`, doc: file, hash }));
     console.log(`  ${file}: ${chunks.length} 个片段`);
   }
   return sources;
@@ -46,10 +56,7 @@ function collectSources() {
 
 const force = process.argv.includes('--force');
 const existing = loadVectors();
-if (!force && existing.chunks.length) {
-  console.log(`向量库已存在（${existing.chunks.length} 条，model=${existing.model || 'mock'}）。需要重建请加 --force`);
-  process.exit(0);
-}
+const hasDocMeta = existing.chunks.every((c) => c.doc && c.hash);
 
 console.log('读取知识库文档...');
 const sources = collectSources();
@@ -58,14 +65,59 @@ if (!sources.length) {
   process.exit(1);
 }
 
-console.log(`共 ${sources.length} 个片段，开始向量化（${config.mock ? 'MOCK 伪向量' : config.embedding.provider + ':' + config.embedding.model}）...`);
-const embeddings = await embedTexts(sources.map((s) => s.text));
+// 组装本次入库的分片：增量（默认）或全量（--force）
+let toEmbed = sources;
+let keptChunks = [];
+let added = sources.length;
+let removed = 0;
 
+if (!force && existing.chunks.length && hasDocMeta) {
+  // 旧向量按文档分组
+  const byDoc = {};
+  for (const c of existing.chunks) {
+    if (!byDoc[c.doc]) byDoc[c.doc] = { hash: c.hash, chunks: [] };
+    byDoc[c.doc].chunks.push(c);
+  }
+  // 当前文档按文档去重分组（一个文档只处理一次）
+  const curDocs = {};
+  for (const s of sources) {
+    if (!curDocs[s.doc]) curDocs[s.doc] = { hash: s.hash, chunks: [] };
+    curDocs[s.doc].chunks.push(s);
+  }
+  // 内容未变化的文档：复用旧向量；变化/新增：重新向量化
+  toEmbed = [];
+  keptChunks = [];
+  for (const [doc, info] of Object.entries(curDocs)) {
+    const old = byDoc[doc];
+    if (old && old.hash === info.hash) {
+      keptChunks.push(...old.chunks);
+    } else {
+      toEmbed.push(...info.chunks);
+    }
+  }
+  added = toEmbed.length;
+  // 删除的文档：不在当前文档列表中 → 其旧向量自然被丢弃
+  removed = Object.keys(byDoc).filter((d) => !curDocs[d]).length;
+  console.log(`增量模式：复用 ${keptChunks.length} 条旧向量，新增/变化 ${added} 条，清理已删除文档 ${removed} 份`);
+}
+
+if (toEmbed.length) {
+  console.log(`向量化 ${toEmbed.length} 个片段（${config.mock ? 'MOCK 伪向量' : config.embedding.provider + ':' + config.embedding.model}）...`);
+  const embeddings = await embedTexts(toEmbed.map((s) => s.text));
+  const newChunks = toEmbed.map((s, i) => ({ id: 0, ...s, embedding: embeddings[i] }));
+  keptChunks = [...keptChunks, ...newChunks];
+}
+
+// 重新编号并落盘
+const files = {};
+for (const s of sources) files[s.doc] = s.hash;
+const chunks = keptChunks.map((c, i) => ({ ...c, id: i + 1 }));
 const store = {
   model: config.mock ? `mock:${config.embedding.model}` : `${config.embedding.provider}:${config.embedding.model}`,
-  dim: embeddings[0]?.length || 0,
-  chunks: sources.map((s, i) => ({ id: i + 1, ...s, embedding: embeddings[i] })),
+  dim: chunks[0]?.embedding?.length || 0,
+  files,
+  chunks,
 };
 saveVectors(store);
 
-console.log(`✅ 入库完成：${store.chunks.length} 条 → ${config.paths.vectorsFile}（向量维度 ${store.dim}）`);
+console.log(`✅ 入库完成：共 ${store.chunks.length} 条（本次新增 ${added} 条）→ ${config.paths.vectorsFile}（向量维度 ${store.dim}）`);
