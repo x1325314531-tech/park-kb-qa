@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
 import { chatStream } from './api'
+import { renderMarkdown } from './markdown'
 import type { ChatMessage, SourceItem } from './api'
 
 interface DisplayMessage {
@@ -178,7 +179,8 @@ function onKeydown(e: KeyboardEvent) {
 
       <div v-for="(m, i) in messages" :key="i" class="msg" :class="m.role">
         <div class="bubble" :class="{ 'error-bubble': m.error }">
-          {{ m.content }}
+          <div v-if="m.role === 'assistant'" class="markdown-body" v-html="renderMarkdown(m.content)"></div>
+          <template v-else>{{ m.content }}</template>
           <span v-if="streaming && i === messages.length - 1 && !m.content" class="typing">
             <span></span><span></span><span></span>
           </span>

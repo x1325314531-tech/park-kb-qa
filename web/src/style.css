@@ -221,6 +221,118 @@ body::after {
   box-shadow: 0 4px 20px rgba(2, 8, 26, 0.35);
 }
 
+/* ---- AI 回答 Markdown 渲染样式 ---- */
+.markdown-body {
+  font-size: 13.5px;
+  line-height: 1.75;
+  word-break: break-word;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 6px 0;
+}
+
+.markdown-body strong {
+  color: #7ee7ff;
+  font-weight: 700;
+}
+
+.markdown-body em {
+  color: var(--text-2);
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 12px 0 6px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #d9f3ff;
+}
+
+.markdown-body h1 {
+  font-size: 15.5px;
+  padding-left: 9px;
+  border-left: 3px solid var(--accent);
+}
+
+.markdown-body h2 {
+  font-size: 14.5px;
+  padding-left: 8px;
+  border-left: 3px solid rgba(34, 211, 238, 0.7);
+}
+
+.markdown-body h3 {
+  font-size: 13.5px;
+  color: var(--accent);
+}
+
+.markdown-body h4 {
+  font-size: 13px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.markdown-body li {
+  margin: 3px 0;
+}
+
+.markdown-body li::marker {
+  color: var(--accent);
+}
+
+.markdown-body code {
+  background: rgba(34, 211, 238, 0.12);
+  color: #7ee7ff;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.markdown-body pre {
+  background: rgba(2, 6, 20, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: #b8e6ff;
+}
+
+.markdown-body blockquote {
+  margin: 8px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(34, 211, 238, 0.06);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-2);
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 10px 0;
+}
+
 .typing {
   display: inline-flex;
   gap: 4px;
