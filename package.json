@@ -4,7 +4,8 @@
   "private": true,
   "description": "园区设备知识库问答 - RAG Demo（Vue3 + Node.js + SSE）",
   "workspaces": [
-    "web"
+    "web",
+    "server"
   ],
   "scripts": {
     "dev:server": "node server/src/index.js",

@@ -1,10 +1,11 @@
 {
-  "name": "park-kb-qa-server",
+  "name": "park-kb-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "园区设备知识库问答 - 后端服务（零 npm 依赖，Node >= 18）",
-  "engines": {
-    "node": ">=18"
+  "description": "园区设备知识库问答 - 服务端（原生 node:http + 可选 sqlite-vec 向量库）",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "sqlite-vec": "^0.1.6"
   }
 }

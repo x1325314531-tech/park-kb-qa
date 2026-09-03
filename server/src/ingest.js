@@ -120,4 +120,7 @@ const store = {
 };
 saveVectors(store);
 
-console.log(`✅ 入库完成：共 ${store.chunks.length} 条（本次新增 ${added} 条）→ ${config.paths.vectorsFile}（向量维度 ${store.dim}）`);
+const storePath = process.env.VECTOR_STORE === 'json' || !(await import('./store-sqlite.js')).available
+  ? config.paths.vectorsFile
+  : config.paths.dataDir + '/vectors.db';
+console.log(`✅ 入库完成：共 ${store.chunks.length} 条（本次新增 ${added} 条）→ ${storePath}（向量维度 ${store.dim}）`);

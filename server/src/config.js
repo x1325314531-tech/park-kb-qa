@@ -54,6 +54,7 @@ export const config = {
   },
   paths: {
     sourceDir: path.join(SERVER_DIR, 'data', 'source'),
+    dataDir: path.join(SERVER_DIR, 'data'),
     vectorsFile: path.join(SERVER_DIR, 'data', 'vectors.json'),
   },
 };

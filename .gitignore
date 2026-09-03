@@ -2,5 +2,7 @@ node_modules/
 dist/
 .env
 server/data/vectors.json
+server/data/*.db
+server/data/*.db-*
 *.log
 .DS_Store

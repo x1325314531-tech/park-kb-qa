@@ -1,47 +1,19 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { config } from './config.js';
-
-function cosine(a, b) {
-  let dot = 0;
-  let na = 0;
-  let nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
-  }
-  const denom = Math.sqrt(na) * Math.sqrt(nb);
-  return denom === 0 ? 0 : dot / denom;
-}
-
-export function loadVectors() {
-  if (!existsSync(config.paths.vectorsFile)) return { model: '', dim: 0, chunks: [] };
-  try {
-    return JSON.parse(readFileSync(config.paths.vectorsFile, 'utf8'));
-  } catch {
-    return { model: '', dim: 0, chunks: [] };
-  }
-}
-
-export function saveVectors(store) {
-  mkdirSync(path.dirname(config.paths.vectorsFile), { recursive: true });
-  writeFileSync(config.paths.vectorsFile, JSON.stringify(store), 'utf8');
-}
-
 /**
- * 余弦相似度 TopK 检索
- * @returns {{ hits: Array<{id,text,source,score}>, total: number }}
+ * 向量存储层门面：按 VECTOR_STORE 环境变量分发（默认 sqlite-vec，可回退 JSON）。
+ *   VECTOR_STORE=sqlite   → server/data/vectors.db（sqlite-vec KNN，推荐，需 npm install）
+ *   VECTOR_STORE=json     → server/data/vectors.json（零依赖回退）
+ * 未安装 sqlite-vec 依赖时自动回退 JSON 并给出提示。
  */
-export function retrieve(queryVector, { topK = config.rag.topK, threshold = config.rag.threshold } = {}) {
-  const store = loadVectors();
-  if (!store.chunks.length) return { hits: [], total: 0 };
-  const scored = store.chunks
-    .map((chunk) => ({ ...chunk, score: cosine(queryVector, chunk.embedding) }))
-    .sort((a, b) => b.score - a.score);
-  const hits = scored
-    .filter((item) => item.score >= threshold)
-    .slice(0, topK)
-    .map(({ id, text, source, score }) => ({ id, text, source, score: Number(score.toFixed(4)) }));
-  return { hits, total: store.chunks.length };
+import * as jsonStore from './store-json.js';
+import * as sqliteStore from './store-sqlite.js';
+
+const want = (process.env.VECTOR_STORE || 'sqlite').toLowerCase();
+const useSqlite = want === 'sqlite' && sqliteStore.available;
+
+if (want === 'sqlite' && !sqliteStore.available) {
+  console.warn('[vector-store] 未检测到 better-sqlite3/sqlite-vec，已回退 JSON 存储（执行 npm install 后自动切换 SQLite）。');
 }
+
+export const loadVectors = (...args) => (useSqlite ? sqliteStore : jsonStore).loadVectors(...args);
+export const saveVectors = (...args) => (useSqlite ? sqliteStore : jsonStore).saveVectors(...args);
+export const retrieve = (...args) => (useSqlite ? sqliteStore : jsonStore).retrieve(...args);
